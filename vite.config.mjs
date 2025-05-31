@@ -1,5 +1,6 @@
 import Vue from '@vitejs/plugin-vue'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
+import TailwindCSS from '@tailwindcss/vite'
 
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
@@ -9,7 +10,7 @@ export default defineConfig({
     Vue({
       template: { transformAssetUrls },
     }),
-    Vuetify(),
+    Vuetify(),TailwindCSS()
   ],
   optimizeDeps: {
     exclude: ['vuetify'],
