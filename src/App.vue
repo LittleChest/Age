@@ -43,8 +43,7 @@
                 </div>
 
                 <v-switch v-model="legacyModel" color="primary" hide-details class="mt-4" label="使用旧版方案" />
-                <v-switch v-model="saveConsent" color="primary" hide-details class="mt-2"
-                  label="允许littlew.top将此信息与你的账户关联" />
+                <v-switch v-model="saveConsent" color="primary" hide-details label="允许littlew.top将此信息与你的账户关联" />
               </v-card-text>
             </v-card>
           </v-col>
