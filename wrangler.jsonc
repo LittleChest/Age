@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "age",
+  "compatibility_date": "2025-09-26",
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "directory": "./public/"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}
