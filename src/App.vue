@@ -73,6 +73,9 @@ const video = ref(null)
 async function startCamera() {
   try {
     errorMsg.value = ''
+    if (navigator.permissions && navigator.permissions.query) {
+      await navigator.permissions.query({ name: 'camera' })
+    }
     stream.value = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
     cameraActive.value = true
     await nextTick()
