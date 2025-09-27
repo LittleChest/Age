@@ -8,56 +8,29 @@
               <v-card-title class="justify-center">年龄验证</v-card-title>
               <v-card-text>
                 <div class="flex justify-center text-center">
-                  <video
-                  ref="video"
-                  autoplay
-                  playsinline
-                  muted
-                  width="320"
-                  height="240"
-                  class="rounded-lg bg-black"
-                  v-show="cameraActive && !photoData"
-                  ></video>
+                  <video ref="video" autoplay playsinline muted width="320" height="240" class="rounded-lg bg-black"
+                    v-show="cameraActive && !photoData"></video>
 
-                  <img
-                  v-if="photoData"
-                  :src="photoData"
-                  alt="预览"
-                  width="320"
-                  height="240"
-                  class="rounded-lg object-cover"
-                  />
+                  <img v-if="photoData" :src="photoData" alt="预览" width="320" height="240"
+                    class="rounded-lg object-cover" />
                 </div>
 
                 <div v-if="errorMsg" class="text-red-600 text-center mt-2">
                   {{ errorMsg }}
                 </div>
 
-                <div class="mt-4 flex gap-3 justify-center">
-                  <v-btn color="primary" @click="takePhoto" :disabled="!cameraActive" v-if="!photoData"
-                    >拍照</v-btn
-                  >
+                <div class="mt-4 flex gap-3 justify-center items-center">
+                  <v-btn color="primary" @click="takePhoto" :disabled="!cameraActive" v-if="!photoData">拍照</v-btn>
                   <v-btn color="secondary" @click="retake" v-if="photoData">重拍</v-btn>
                   <v-btn color="success" @click="uploadPhoto" :disabled="!photoBlob">上传</v-btn>
                   <label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      @change="onFileChange"
-                      class="hidden"
-                      ref="fileInput"
-                    />
+                    <input type="file" accept="image/*" @change="onFileChange" class="hidden" ref="fileInput" />
                     <v-btn color="info" @click="$refs.fileInput.click()">从相册选择</v-btn>
                   </label>
                 </div>
 
-                  <v-switch v-model="saveConsent" inset hide-details color="primary" class="mt-4" label="允许 littlew.top 将此信息与你的账户关联" />
-
-                <v-progress-linear
-                  :indeterminate="true"
-                  v-if="loading"
-                  class="mt-4"
-                ></v-progress-linear>
+                <v-progress-linear :indeterminate="true" color="primary" v-if="loading"
+                  class="mt-4"></v-progress-linear>
 
                 <div v-if="debug" class="mt-4">
                   <div>调试信息</div>
@@ -68,6 +41,9 @@
                   <div>年龄：{{ ageDisplay }}</div>
                   <div>性别：{{ genderDisplay }}</div>
                 </div>
+
+                <v-switch v-model="saveConsent" color="primary" hide-details class="mt-4"
+                  label="允许littlew.top将此信息与你的账户关联" />
               </v-card-text>
             </v-card>
           </v-col>
@@ -77,140 +53,138 @@
   </v-app>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      cameraActive: false,
-      stream: null,
-      photoData: null,
-      photoBlob: null,
-      loading: false,
-      debug: '',
-      errorMsg: '',
-      saveConsent: true,
-      age: null,
-      gender: null,
-    }
-  },
-  methods: {
-    async startCamera() {
-      try {
-        this.stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user' },
-          audio: false,
-        })
-        this.cameraActive = true
-        await this.$nextTick()
-        const videoEl = this.$refs.video
-        videoEl.srcObject = this.stream
-        await videoEl.play().catch(() => {})
-      } catch (e) {
-        this.errorMsg = e
-      }
-    },
-    takePhoto() {
-      try {
-        const video = this.$refs.video
-        const canvas = document.createElement('canvas')
-        canvas.width = video.videoWidth || 320
-        canvas.height = video.videoHeight || 240
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-        canvas.toBlob(
-          (blob) => {
-            this.photoBlob = blob
-            this.photoData = URL.createObjectURL(blob)
-          },
-          'image/jpeg',
-          0.9
-        )
-        this.stopCamera()
-      } catch (e) {
-        this.errorMsg = e
-      }
-    },
-    retake() {
-      try {
-        if (this.photoData) URL.revokeObjectURL(this.photoData)
-        this.photoData = null
-        this.photoBlob = null
-        this.startCamera()
-      } catch (e) {
-        this.errorMsg = e
-      }
-    },
-    stopCamera() {
-      if (this.stream) {
-        this.stream.getTracks().forEach((t) => t.stop())
-        this.stream = null
-      }
-      this.cameraActive = false
-    },
-    onFileChange(e) {
-      try {
-        const file = e.target.files && e.target.files[0]
-        this.photoBlob = file
-        this.photoData = URL.createObjectURL(file)
-      } catch (e) {
-        this.errorMsg = e
-      }
-    },
-    async uploadPhoto() {
-      if (!this.photoBlob) {
-        this.errorMsg = '请先拍照或选择图片'
-        return
-      }
-      this.loading = true
-      this.debug = ''
-      try {
-        const form = new FormData()
-        form.append('face', this.photoBlob, 'selfie.jpg')
+<script setup>
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 
-        let url = 'https://api.littlew.top/age'
-        if (this.saveConsent) url += '?save=true'
-        const resp = await fetch(url, {
-          method: 'POST',
-          body: form,
-        }, {
-          credentials: 'include',
-        })
+const cameraActive = ref(false)
+const stream = ref(null)
+const photoData = ref(null)
+const photoBlob = ref(null)
+const loading = ref(false)
+const debug = ref('')
+const errorMsg = ref('')
+const saveConsent = ref(true)
+const age = ref(null)
+const gender = ref(null)
 
-        const text = await resp.text()
-        try {
-          const data = JSON.parse(text)
-          this.debug = data.raw
-          this.age = typeof data.age === 'number' ? data.age : -1
-          this.gender = typeof data.gender === 'number' ? data.gender : -1
-        } catch (e) {
-          this.debug = text
-          this.age = -1
-          this.gender = -1
-        }
-      } catch (e) {
-        this.errorMsg = e
-      } finally {
-        this.loading = false
-      }
-    },
-  },
-  computed: {
-    ageDisplay() {
-      if (this.age === null) return '未知'
-      return this.age > -1 ? String(this.age) : '未知'
-    },
-    genderDisplay() {
-      if (this.gender === null) return '未知'
-      if (this.gender === 0) return 'Female'
-      if (this.gender === 1) return 'Male'
-      return '未知'
-    },
-  },
-  beforeUnmount() {
-    this.stopCamera()
-  },
-  mounted() {
-    this.startCamera()
+const video = ref(null)
+
+async function startCamera() {
+  try {
+    errorMsg.value = ''
+    stream.value = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+    cameraActive.value = true
+    await nextTick()
+    const videoEl = video.value
+    videoEl.srcObject = stream.value
+    await videoEl.play().catch(() => { })
+
+  } catch (e) {
+    errorMsg.value = e
   }
 }
+
+function stopCamera() {
+  if (stream.value) {
+    stream.value.getTracks().forEach((t) => t.stop())
+    stream.value = null
+  }
+  cameraActive.value = false
+}
+
+function takePhoto() {
+  try {
+    errorMsg.value = ''
+    const videoEl = video.value
+    age.value = null
+    gender.value = null
+    const canvas = document.createElement('canvas')
+    canvas.width = videoEl.videoWidth || 320
+    canvas.height = videoEl.videoHeight || 240
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height)
+    canvas.toBlob((blob) => {
+      photoBlob.value = blob
+      photoData.value = URL.createObjectURL(blob)
+    }, 'image/jpeg', 0.9)
+    stopCamera()
+  } catch (e) {
+    errorMsg.value = e
+  }
+}
+
+function retake() {
+  try {
+    if (photoData.value) URL.revokeObjectURL(photoData.value)
+    photoData.value = null
+    photoBlob.value = null
+    errorMsg.value = ''
+    age.value = null
+    gender.value = null
+    startCamera()
+  } catch (e) {
+    errorMsg.value = e
+  }
+}
+
+function onFileChange(e) {
+  try {
+    errorMsg.value = ''
+    const file = e.target.files && e.target.files[0]
+    if (!file) throw new Error('未选择文件')
+    photoBlob.value = file
+    photoData.value = URL.createObjectURL(file)
+    age.value = null
+    gender.value = null
+  } catch (e) {
+    errorMsg.value = e
+  }
+}
+
+async function uploadPhoto() {
+  if (!photoBlob.value) {
+    errorMsg.value = '请先拍照或选择图片'
+    return
+  }
+  loading.value = true
+  errorMsg.value = ''
+  debug.value = ''
+  try {
+    const form = new FormData()
+    form.append('face', photoBlob.value, 'selfie.jpg')
+    let url = 'https://api.littlew.top/age'
+    if (saveConsent.value) url += '?save=true'
+    const resp = await fetch(url, { method: 'POST', body: form }, { credentials: 'include' })
+    const text = await resp.text()
+    try {
+      const data = JSON.parse(text)
+      debug.value = data.raw || ''
+      age.value = typeof data.age === 'number' ? data.age : -1
+      gender.value = typeof data.gender === 'number' ? data.gender : -1
+    } catch (err) {
+      debug.value = text
+      age.value = -1
+      gender.value = -1
+    }
+  } catch (e) {
+    errorMsg.value = e
+  } finally {
+    loading.value = false
+  }
+}
+
+const ageDisplay = computed(() => {
+  if (age.value === null) return '未知'
+  return age.value > -1 ? String(age.value) : '未知'
+})
+
+const genderDisplay = computed(() => {
+  if (gender.value === null) return '未知'
+  if (gender.value === 0) return 'Female'
+  if (gender.value === 1) return 'Male'
+  return '未知'
+})
+
+onBeforeUnmount(() => stopCamera())
+onMounted(() => startCamera())
 </script>
