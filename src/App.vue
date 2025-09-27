@@ -42,7 +42,8 @@
                   <div>性别：{{ genderDisplay }}</div>
                 </div>
 
-                <v-switch v-model="saveConsent" color="primary" hide-details class="mt-4"
+                <v-switch v-model="legacyModel" color="primary" hide-details class="mt-4" label="使用旧版方案" />
+                <v-switch v-model="saveConsent" color="primary" hide-details class="mt-2"
                   label="允许littlew.top将此信息与你的账户关联" />
               </v-card-text>
             </v-card>
@@ -63,6 +64,7 @@ const photoBlob = ref(null)
 const loading = ref(false)
 const debug = ref('')
 const errorMsg = ref('')
+const legacyModel = ref(false)
 const saveConsent = ref(true)
 const age = ref(null)
 const gender = ref(null)
@@ -153,7 +155,10 @@ async function uploadPhoto() {
     const form = new FormData()
     form.append('face', photoBlob.value, 'selfie.jpg')
     let url = 'https://api.littlew.top/age'
-    if (saveConsent.value) url += '?save=true'
+    const params = []
+    if (saveConsent.value) params.push('save=true')
+    if (legacyModel.value) params.push('legacy=true')
+    if (params.length) url += '?' + params.join('&')
     const resp = await fetch(url, { method: 'POST', body: form }, { credentials: 'include' })
     const text = await resp.text()
     try {
