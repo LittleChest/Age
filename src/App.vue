@@ -5,7 +5,7 @@
         <v-row align="center" justify="center">
           <v-col cols="12" sm="8" md="6">
             <v-card class="pa-6" elevation="6">
-              <v-card-title class="justify-center">年龄验证</v-card-title>
+              <v-card-title class="justify-center">年龄识别</v-card-title>
               <v-card-text>
                 <div class="flex justify-center text-center">
                   <video ref="video" autoplay playsinline muted width="320" height="240" class="rounded-lg bg-black"
@@ -146,6 +146,7 @@ function onFileChange(e) {
 }
 
 async function uploadPhoto() {
+  stopCamera()
   if (!photoBlob.value) {
     errorMsg.value = '请先拍照或选择图片'
     return
