@@ -32,9 +32,10 @@
                 <v-progress-linear :indeterminate="true" color="primary" v-if="loading"
                   class="mt-4"></v-progress-linear>
 
-                <div v-if="debug" class="mt-4">
-                  <div>调试信息</div>
-                  <pre class="bg-gray-100 p-3 rounded overflow-auto">{{ debug }}</pre>
+                <div v-if="Array.isArray(debug) && debug.length" class="mt-4">
+                  <div v-for="(item) in debug" class="mb-2">
+                    <pre class="bg-gray-100 p-3 rounded overflow-auto">{{ item }}</pre>
+                  </div>
                 </div>
 
                 <div v-if="age !== null || gender !== null" class="mt-4 text-center">
@@ -42,8 +43,8 @@
                   <div>性别：{{ genderDisplay }}</div>
                 </div>
 
-                <v-switch v-model="legacyModel" color="primary" hide-details class="mt-4" label="使用旧版方案" />
-                <v-switch v-model="saveConsent" color="primary" hide-details label="允许littlew.top将此信息与你的账户关联" />
+                <v-switch v-model="saveConsent" color="primary" hide-details class="mt-4"
+                  label="允许 littlew.top 将此信息与你的账户关联" />
               </v-card-text>
             </v-card>
           </v-col>
@@ -63,7 +64,6 @@ const photoBlob = ref(null)
 const loading = ref(false)
 const debug = ref('')
 const errorMsg = ref('')
-const legacyModel = ref(false)
 const saveConsent = ref(true)
 const age = ref(null)
 const gender = ref(null)
@@ -159,7 +159,6 @@ async function uploadPhoto() {
     let url = 'https://api.littlew.top/age'
     const params = []
     if (saveConsent.value) params.push('save=true')
-    if (legacyModel.value) params.push('legacy=true')
     if (params.length) url += '?' + params.join('&')
     const resp = await fetch(url, { method: 'POST', body: form }, { credentials: 'include' })
     const text = await resp.text()
